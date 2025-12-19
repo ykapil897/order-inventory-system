@@ -44,6 +44,14 @@ services:
       - postgres
       - redis
       - rabbitmq
+  
+  expiry-worker:
+    build: .
+    command: npm run expiry-worker
+    env_file:
+      - .env.docker
+    depends_on:
+      - postgres
 
 volumes:
   pgdata:
