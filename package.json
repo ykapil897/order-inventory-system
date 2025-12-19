@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node src/server.ts",
-    "worker": "ts-node src/worker.ts"
+    "worker": "ts-node src/worker.ts",
+    "expiry-worker": "ts-node src/expiryWorker.ts"
   },
   "keywords": [],
   "author": "",
