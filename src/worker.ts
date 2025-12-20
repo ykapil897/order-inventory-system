@@ -41,9 +41,12 @@ async function startWorker() {
   channel.consume(QUEUE_ORDER_CREATED, async (msg) => {
     if (!msg) return;
 
-    const { orderId } = JSON.parse(msg.content.toString());
+    const message = msg;
+    const { orderId } = JSON.parse(message.content.toString());
 
     try {
+      throw new Error("FORCED_ORDER_WORKER_FAILURE"); // For testing retry and DLQ
+
       await prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({
           where: { id: orderId },
@@ -61,7 +64,7 @@ async function startWorker() {
 
       await publishOrderConfirmed(orderId);
 
-      channel.ack(msg);
+      channel.ack(message);
       logger.info({ orderId }, 'order_confirmed');
     } catch (err) {
       
@@ -70,9 +73,9 @@ async function startWorker() {
       //   'worker_failed_retrying'
       // );
 
-      // channel.nack(msg, false, true); // retry
+      // channel.nack(message, false, true); // retry
 
-      const retryCount = getRetryCount(msg);
+      const retryCount = getRetryCount(message);
 
       if (retryCount >= MAX_RETRIES) {
         // console.error("Order moved to DLQ", { orderId, err });
@@ -82,8 +85,8 @@ async function startWorker() {
           err,
         });
 
-        await sendToDLQ(channel, QUEUE_ORDER_DLQ, msg);
-        channel.ack(msg);
+        await sendToDLQ(channel, QUEUE_ORDER_DLQ, message);
+        channel.ack(message);
         return;
       }
 
@@ -92,10 +95,10 @@ async function startWorker() {
       setTimeout(() => {
         channel.sendToQueue(
           QUEUE_ORDER_CREATED,
-          msg.content,
-          incrementRetryHeaders(msg)
+          message.content,
+          incrementRetryHeaders(message)
         );
-        channel.ack(msg);
+        channel.ack(message);
       }, delayMs);
     }
   });

@@ -50,10 +50,13 @@ async function startPaymentWorker() {
   channel.consume(QUEUE_ORDER_CONFIRMED, async (msg) => {
     if (!msg) return;
 
-    const { orderId } = JSON.parse(msg.content.toString());
+    const message = msg;
+    const { orderId } = JSON.parse(message.content.toString());
 
     try {
       // Simulate payment delay
+      throw new Error("FORCED_PAYMENT_FAILURE"); // For testing retry and DLQ
+
       await sleep(1000 + Math.random() * 2000);
 
       await prisma.$transaction(async (tx) => {
@@ -93,13 +96,13 @@ async function startPaymentWorker() {
         }
       });
 
-      channel.ack(msg);
+      channel.ack(message);
       console.log(`Payment processed for order ${orderId}`);
     } catch (err) {
     //   console.error("Payment worker error:", err);
-    //   channel.nack(msg, false, true); // retry
+    //   channel.nack(message, false, true); // retry
 
-        const retryCount = getRetryCount(msg);
+        const retryCount = getRetryCount(message);
 
         if (retryCount >= MAX_RETRIES) {
             // console.error("Order moved to DLQ", { orderId, err });
@@ -109,8 +112,8 @@ async function startPaymentWorker() {
                 err,
             });
 
-            await sendToDLQ(channel, QUEUE_PAYMENT_DLQ, msg);
-            channel.ack(msg);
+            await sendToDLQ(channel, QUEUE_PAYMENT_DLQ, message);
+            channel.ack(message);
             return;
         }
 
@@ -119,10 +122,10 @@ async function startPaymentWorker() {
         setTimeout(() => {
             channel.sendToQueue(
             QUEUE_ORDER_CONFIRMED,
-            msg.content,
-            incrementRetryHeaders(msg)
+            message.content,
+            incrementRetryHeaders(message)
             );
-            channel.ack(msg);
+            channel.ack(message);
         }, delayMs);
     }
   });
