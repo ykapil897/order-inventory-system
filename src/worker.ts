@@ -6,8 +6,27 @@ import { publishOrderConfirmed } from "./publisher";
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 
+
+async function connectWithRetry(url: string, retries = 10) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await amqp.connect(url);
+    } catch (err) {
+      console.error(
+        `RabbitMQ connection failed (attempt ${i + 1}/${retries}). Retrying...`
+      );
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+  }
+  throw new Error("Could not connect to RabbitMQ after retries");
+}
+
+
+
 async function startWorker() {
-  const connection = await amqp.connect(RABBITMQ_URL);
+  // const connection = await amqp.connect(RABBITMQ_URL); // This will not work if the rabbitmq server is not started or nto accepting any TCP connections
+  
+  const connection = await connectWithRetry(RABBITMQ_URL);
   const channel = await connection.createChannel();
 
   await channel.assertQueue(QUEUE_ORDER_CREATED, { durable: true });
