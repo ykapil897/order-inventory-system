@@ -2,6 +2,7 @@ import amqp from "amqplib";
 import { prisma } from "./prisma";
 import { QUEUE_ORDER_CREATED } from "./queue";
 import { logger } from './logger';
+import { publishOrderConfirmed } from "./publisher";
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 
@@ -34,6 +35,8 @@ async function startWorker() {
           data: { status: "CONFIRMED" },
         });
       });
+
+      await publishOrderConfirmed(orderId);
 
       channel.ack(msg);
       logger.info({ orderId }, 'order_confirmed');
