@@ -4,7 +4,7 @@ import { reserveInventoryAndCreateOrder } from "../reserveOrder";
 import { publishOrderCreated } from "../publisher";
 import { redis } from "../redis";
 import { prisma } from "../prisma";
-
+import { chaosState } from "../chaos";
 
 const router = Router();
 
@@ -21,6 +21,13 @@ const orderSchema = z.object({
 });
 
 router.post("/", async (req, res) => {
+  
+  if (chaosState.apiReadOnly) {
+    return res
+      .status(503)
+      .json({ error: "SERVICE_UNAVAILABLE (CHAOS MODE)" });
+  }
+
   try {
     
     const idempotencyKey = req.header("Idempotency-Key"); 
