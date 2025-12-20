@@ -45,7 +45,7 @@ async function startWorker() {
     const { orderId } = JSON.parse(message.content.toString());
 
     try {
-      throw new Error("FORCED_ORDER_WORKER_FAILURE"); // For testing retry and DLQ
+      // throw new Error("FORCED_ORDER_WORKER_FAILURE"); // For testing retry and DLQ
 
       await prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({

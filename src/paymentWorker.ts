@@ -55,7 +55,7 @@ async function startPaymentWorker() {
 
     try {
       // Simulate payment delay
-      throw new Error("FORCED_PAYMENT_FAILURE"); // For testing retry and DLQ
+    //   throw new Error("FORCED_PAYMENT_FAILURE"); // For testing retry and DLQ
 
       await sleep(1000 + Math.random() * 2000);
 
