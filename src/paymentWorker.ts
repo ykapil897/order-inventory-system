@@ -2,10 +2,17 @@ import amqp from "amqplib";
 import { prisma } from "./prisma";
 import { QUEUE_ORDER_CONFIRMED } from "./queue";
 
+import { getRetryCount, incrementRetryHeaders } from "./retry";
+import { sendToDLQ } from "./dlq";
+import { QUEUE_PAYMENT_DLQ } from "./queue";
+
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 
 // 80% success
 const PAYMENT_SUCCESS_RATE = 0.8;
+
+// 5 Max Retries
+const MAX_RETRIES = 5;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -88,8 +95,29 @@ async function startPaymentWorker() {
       channel.ack(msg);
       console.log(`Payment processed for order ${orderId}`);
     } catch (err) {
-      console.error("Payment worker error:", err);
-      channel.nack(msg, false, true); // retry
+    //   console.error("Payment worker error:", err);
+    //   channel.nack(msg, false, true); // retry
+
+        const retryCount = getRetryCount(msg);
+
+        if (retryCount >= MAX_RETRIES) {
+            console.error("Order moved to DLQ", { orderId, err });
+
+            await sendToDLQ(channel, QUEUE_PAYMENT_DLQ, msg);
+            channel.ack(msg);
+            return;
+        }
+
+        const delayMs = retryCount * 3000;
+
+        setTimeout(() => {
+            channel.sendToQueue(
+            QUEUE_ORDER_CONFIRMED,
+            msg.content,
+            incrementRetryHeaders(msg)
+            );
+            channel.ack(msg);
+        }, delayMs);
     }
   });
 }
