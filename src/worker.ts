@@ -4,6 +4,11 @@ import { QUEUE_ORDER_CREATED } from "./queue";
 import { logger } from './logger';
 import { publishOrderConfirmed } from "./publisher";
 
+import { getRetryCount, incrementRetryHeaders } from "./retry";
+import { sendToDLQ } from "./dlq";
+import { QUEUE_ORDER_DLQ } from "./queue";
+
+const MAX_RETRIES = 5;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 
 
@@ -20,8 +25,6 @@ async function connectWithRetry(url: string, retries = 10) {
   }
   throw new Error("Could not connect to RabbitMQ after retries");
 }
-
-
 
 async function startWorker() {
   // const connection = await amqp.connect(RABBITMQ_URL); // This will not work if the rabbitmq server is not started or nto accepting any TCP connections
@@ -61,12 +64,33 @@ async function startWorker() {
       logger.info({ orderId }, 'order_confirmed');
     } catch (err) {
       
-      logger.error(
-        { orderId, err },
-        'worker_failed_retrying'
-      );
+      // logger.error(
+      //   { orderId, err },
+      //   'worker_failed_retrying'
+      // );
 
-      channel.nack(msg, false, true); // retry
+      // channel.nack(msg, false, true); // retry
+
+      const retryCount = getRetryCount(msg);
+
+      if (retryCount >= MAX_RETRIES) {
+        console.error("Order moved to DLQ", { orderId, err });
+
+        await sendToDLQ(channel, QUEUE_ORDER_DLQ, msg);
+        channel.ack(msg);
+        return;
+      }
+
+      const delayMs = retryCount * 3000;
+
+      setTimeout(() => {
+        channel.sendToQueue(
+          QUEUE_ORDER_CREATED,
+          msg.content,
+          incrementRetryHeaders(msg)
+        );
+        channel.ack(msg);
+      }, delayMs);
     }
   });
 }
