@@ -5,6 +5,7 @@ import pinoHttp from 'pino-http';
 import { logger } from './logger';
 import { randomUUID } from 'crypto';
 import { httpDuration, register } from './metrics';
+import adminRouter from "./routes/admin";
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 
 app.use("/orders", ordersRouter);
 app.use("/inventory", inventoryRouter);
+app.use("/admin/chaos", adminRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
