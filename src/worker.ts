@@ -33,6 +33,7 @@ async function startWorker() {
   const channel = await connection.createChannel();
 
   await channel.assertQueue(QUEUE_ORDER_CREATED, { durable: true });
+  await channel.assertQueue(QUEUE_ORDER_DLQ, { durable: true });
   channel.prefetch(1);
 
   console.log("Worker started. Waiting for messages...");
@@ -74,7 +75,12 @@ async function startWorker() {
       const retryCount = getRetryCount(msg);
 
       if (retryCount >= MAX_RETRIES) {
-        console.error("Order moved to DLQ", { orderId, err });
+        // console.error("Order moved to DLQ", { orderId, err });
+        console.error("Order moved to DLQ", {
+          orderId,
+          retries: retryCount,
+          err,
+        });
 
         await sendToDLQ(channel, QUEUE_ORDER_DLQ, msg);
         channel.ack(msg);
