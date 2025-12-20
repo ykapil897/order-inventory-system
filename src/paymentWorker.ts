@@ -42,6 +42,7 @@ async function startPaymentWorker() {
   const channel = await connection.createChannel();
 
   await channel.assertQueue(QUEUE_ORDER_CONFIRMED, { durable: true });
+  await channel.assertQueue(QUEUE_PAYMENT_DLQ, { durable: true });
   channel.prefetch(1);
 
   console.log("Payment worker started");
@@ -101,7 +102,12 @@ async function startPaymentWorker() {
         const retryCount = getRetryCount(msg);
 
         if (retryCount >= MAX_RETRIES) {
-            console.error("Order moved to DLQ", { orderId, err });
+            // console.error("Order moved to DLQ", { orderId, err });
+            console.error("Order moved to DLQ", {
+                orderId,
+                retries: retryCount,
+                err,
+            });
 
             await sendToDLQ(channel, QUEUE_PAYMENT_DLQ, msg);
             channel.ack(msg);
