@@ -53,5 +53,15 @@ services:
     depends_on:
       - postgres
 
+  payment-worker:
+    build: .
+    command: npm run payment-worker
+    env_file:
+      - .env.docker
+    depends_on:
+      - postgres
+      - rabbitmq
+
+
 volumes:
   pgdata:
