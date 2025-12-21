@@ -22,6 +22,25 @@ const orderSchema = z.object({
     .min(1),
 });
 
+
+router.get("/:orderId", async (req, res) => {
+  const order = await prisma.order.findUnique({
+    where: { id: req.params.orderId },
+    select: {
+      id: true,
+      status: true,
+      createdAt: true,
+    },
+  });
+
+  if (!order) {
+    return res.status(404).json({ error: "NOT_FOUND" });
+  }
+
+  res.json(order);
+});
+
+
 router.post("/", async (req, res) => {
   
   if (await isApiReadOnly()) {
@@ -104,5 +123,7 @@ router.post("/", async (req, res) => {
     return res.status(500).json({ error: "INTERNAL_ERROR" });
   }
 });
+
+
 
 export default router;
