@@ -6,7 +6,11 @@ import { getRetryCount, incrementRetryHeaders } from "./retry";
 import { sendToDLQ } from "./dlq";
 import { QUEUE_PAYMENT_DLQ } from "./queue";
 
-import { chaosState } from "./chaos";
+import {
+  isPaymentWorkerPaused,
+  getPaymentFailureRate,
+} from "./chaosService";
+
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 
@@ -54,9 +58,14 @@ async function startPaymentWorker() {
 
     const message = msg;
 
-    if (chaosState.paymentWorkerPaused) {
+    if (await isPaymentWorkerPaused()) {
         console.warn("Payment worker paused (chaos mode)");
-        channel.nack(message, false, true);
+        // channel.nack(message, false, true);
+
+          setTimeout(() => {
+            channel.nack(message, false, true);
+          }, 1000);
+
         return;
     }
 
@@ -83,8 +92,9 @@ async function startPaymentWorker() {
         // const paymentSuccess = Math.random() < PAYMENT_SUCCESS_RATE; 
 
         // This allows changing the failure rate at runtime via chaos state
-        const paymentSuccess = Math.random() >= chaosState.paymentFailureRate;
-
+        const failureRate = await getPaymentFailureRate();
+        const paymentSuccess = Math.random() >= failureRate;
+        
         if (paymentSuccess) {
           await tx.order.update({
             where: { id: orderId },

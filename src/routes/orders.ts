@@ -4,7 +4,9 @@ import { reserveInventoryAndCreateOrder } from "../reserveOrder";
 import { publishOrderCreated } from "../publisher";
 import { redis } from "../redis";
 import { prisma } from "../prisma";
-import { chaosState } from "../chaos";
+
+import { isApiReadOnly } from "../chaosService";
+
 
 const router = Router();
 
@@ -22,7 +24,7 @@ const orderSchema = z.object({
 
 router.post("/", async (req, res) => {
   
-  if (chaosState.apiReadOnly) {
+  if (await isApiReadOnly()) {
     return res
       .status(503)
       .json({ error: "SERVICE_UNAVAILABLE (CHAOS MODE)" });

@@ -8,7 +8,7 @@ import { getRetryCount, incrementRetryHeaders } from "./retry";
 import { sendToDLQ } from "./dlq";
 import { QUEUE_ORDER_DLQ } from "./queue";
 
-import { chaosState } from "./chaos";
+import { isOrderWorkerPaused } from "./chaosService";
 
 const MAX_RETRIES = 5;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
@@ -47,9 +47,13 @@ async function startWorker() {
     
     const message = msg;
 
-    if (chaosState.orderWorkerPaused) {
+    if (await isOrderWorkerPaused()) {
       console.warn("Order worker paused (chaos mode)");
-      channel.nack(message, false, true);
+
+      setTimeout(() => {
+        channel.nack(message, false, true);
+      }, 1000);
+
       return;
     }
     
