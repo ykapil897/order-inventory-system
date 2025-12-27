@@ -8,7 +8,7 @@ import { getRetryCount, incrementRetryHeaders } from "./retry";
 import { sendToDLQ } from "./dlq";
 import { QUEUE_ORDER_DLQ } from "./queue";
 
-import { isOrderWorkerPaused } from "./chaosService";
+import { isOrderWorkerPaused, forceOrderDLQ } from "./chaosService";
 
 const MAX_RETRIES = 5;
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
@@ -61,6 +61,10 @@ async function startWorker() {
 
     try {
       // throw new Error("FORCED_ORDER_WORKER_FAILURE"); // For testing retry and DLQ
+
+      if (await forceOrderDLQ()) {
+        throw new Error("FORCED_ORDER_DLQ");
+      }
 
       await prisma.$transaction(async (tx) => {
         const order = await tx.order.findUnique({
