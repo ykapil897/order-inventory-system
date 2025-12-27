@@ -114,6 +114,29 @@ router.post("/payment/failure-rate", async (req, res) => {
   res.json({ paymentFailureRate: rate });
 });
 
+// ---- FORCE DLQ TOGGLES (DEMO ONLY) ----
+
+router.post("/dlq/force/order/on", async (_req, res) => {
+  await redis.set("chaos:forceOrderDLQ", "true");
+  res.json({ status: "force order DLQ enabled" });
+});
+
+router.post("/dlq/force/order/off", async (_req, res) => {
+  await redis.set("chaos:forceOrderDLQ", "false");
+  res.json({ status: "force order DLQ disabled" });
+});
+
+router.post("/dlq/force/payment/on", async (_req, res) => {
+  await redis.set("chaos:forcePaymentDLQ", "true");
+  res.json({ status: "force payment DLQ enabled" });
+});
+
+router.post("/dlq/force/payment/off", async (_req, res) => {
+  await redis.set("chaos:forcePaymentDLQ", "false");
+  res.json({ status: "force payment DLQ disabled" });
+});
+
+
 router.get("/dlq", async (_req, res) => {
   const conn = await amqp.connect(process.env.RABBITMQ_URL || "amqp://localhost");
   const ch = await conn.createChannel();

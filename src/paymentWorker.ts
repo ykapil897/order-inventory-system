@@ -9,6 +9,7 @@ import { QUEUE_PAYMENT_DLQ } from "./queue";
 import {
   isPaymentWorkerPaused,
   getPaymentFailureRate,
+  forcePaymentDLQ,
 } from "./chaosService";
 
 
@@ -74,6 +75,10 @@ async function startPaymentWorker() {
     try {
       // Simulate payment delay
     //   throw new Error("FORCED_PAYMENT_FAILURE"); // For testing retry and DLQ
+
+      if (await forcePaymentDLQ()) {
+        throw new Error("FORCED_PAYMENT_DLQ");
+      }
 
       await sleep(1000 + Math.random() * 2000);
 

@@ -16,3 +16,12 @@ export async function getPaymentFailureRate(): Promise<number> {
   const val = await redis.get("chaos:paymentFailureRate");
   return val ? Number(val) : 0.2; // default 20%
 }
+
+export async function forceOrderDLQ(): Promise<boolean> {
+  return (await redis.get("chaos:forceOrderDLQ")) === "true";
+}
+
+export async function forcePaymentDLQ(): Promise<boolean> {
+  return (await redis.get("chaos:forcePaymentDLQ")) === "true";
+}
+
