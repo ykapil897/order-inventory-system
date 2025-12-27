@@ -27,3 +27,29 @@ export async function getOrder(orderId: string) {
   if (!res.ok) throw new Error("Order fetch failed");
   return res.json();
 }
+
+const ADMIN_BASE = "http://localhost:3232/admin";
+
+export async function adminPost(path: string, body?: any) {
+  const res = await fetch(`${ADMIN_BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Admin POST failed");
+  }
+
+  return res.json();
+}
+
+export async function adminGet(path: string) {
+  const res = await fetch(`${ADMIN_BASE}${path}`);
+  if (!res.ok) {
+    throw new Error("Admin GET failed");
+  }
+  return res.json();
+}
+
