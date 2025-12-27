@@ -4,6 +4,7 @@ import DLQPanel from "./DLQPanel";
 import OrdersSummary from "./OrdersSummary";
 import { MetricsPanel } from "../MetricsPanel";
 import { LoadTestPanel } from "../LoadTestPanel";
+import DLQControls from "./DLQControls";
 
 export default function AdminDashboard() {
   return (
@@ -12,6 +13,7 @@ export default function AdminDashboard() {
       <OrdersSummary />
       <AdminControls />
       <PaymentFailureRate />
+      <DLQControls />
       <DLQPanel />
       <MetricsPanel />
     </div>

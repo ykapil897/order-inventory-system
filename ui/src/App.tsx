@@ -1,10 +1,5 @@
-import AdminDashboard from "./admin/AdminDashboard";
+import Dashboard from "./Dashboard";
 
 export default function App() {
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Order & Inventory System — Admin Demo</h2>
-      <AdminDashboard />
-    </div>
-  );
+  return <Dashboard />;
 }
