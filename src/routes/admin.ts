@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { redis } from "../redis";
 import { exec } from "child_process";
+import { prisma } from "../prisma";
+import amqp from "amqplib";
+import {
+  QUEUE_ORDER_DLQ,
+  QUEUE_PAYMENT_DLQ,
+} from "../queue";
 
 const router = Router();
 
@@ -106,6 +112,36 @@ router.post("/payment/failure-rate", async (req, res) => {
 
   await redis.set("chaos:paymentFailureRate", String(rate));
   res.json({ paymentFailureRate: rate });
+});
+
+router.get("/dlq", async (_req, res) => {
+  const conn = await amqp.connect(process.env.RABBITMQ_URL || "amqp://localhost");
+  const ch = await conn.createChannel();
+
+  const order = await ch.assertQueue(QUEUE_ORDER_DLQ, { durable: true });
+  const payment = await ch.assertQueue(QUEUE_PAYMENT_DLQ, { durable: true });
+
+  await ch.close();
+  await conn.close();
+
+  res.json({
+    orderDLQ: order.messageCount,
+    paymentDLQ: payment.messageCount,
+  });
+}); 
+
+router.get("/orders/summary", async (_req, res) => {
+  const result = await prisma.order.groupBy({
+    by: ["status"],
+    _count: true,
+  });
+
+  const summary: any = {};
+  for (const r of result) {
+    summary[r.status] = r._count;
+  }
+
+  res.json(summary);
 });
 
 export default router;
