@@ -48,6 +48,7 @@ app.use((req, res, next) => {
 app.use("/orders", ordersRouter);
 app.use("/inventory", inventoryRouter);
 app.use("/admin/chaos", adminRouter);
+app.use("/admin", adminRouter);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });

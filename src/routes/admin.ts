@@ -1,7 +1,71 @@
 import { Router } from "express";
 import { redis } from "../redis";
+import { exec } from "child_process";
 
 const router = Router();
+
+/**
+ * POST /admin/load-test
+ * Demo/Admin only
+ */
+router.post("/load-test", (req, res) => {
+  const {
+    vus = 20,
+    iterations = 50,
+    productId = "kapil",
+    quantity = 1,
+  } = req.body || {};
+
+  // 🔒 HARD SAFETY LIMITS
+  if (
+    typeof vus !== "number" ||
+    typeof iterations !== "number" ||
+    typeof quantity !== "number"
+  ) {
+    return res.status(400).json({ error: "INVALID_TYPES" });
+  }
+
+  if (vus < 1 || vus > 200) {
+    return res.status(400).json({ error: "VUS_OUT_OF_RANGE" });
+  }
+
+  if (iterations < 1 || iterations > 1000) {
+    return res.status(400).json({ error: "ITERATIONS_OUT_OF_RANGE" });
+  }
+
+  if (quantity < 1 || quantity > 5) {
+    return res.status(400).json({ error: "QUANTITY_OUT_OF_RANGE" });
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(productId)) {
+    return res.status(400).json({ error: "INVALID_PRODUCT_ID" });
+  }
+
+  // ⚠️ FIXED SCRIPT — ONLY PARAMS CHANGE
+  const cmd = `
+    k6 run load-test.js \
+      --env VUS=${vus} \
+      --env ITERATIONS=${iterations} \
+      --env PRODUCT_ID=${productId} \
+      --env QUANTITY=${quantity}
+  `;
+
+  exec(cmd, (err, stdout, stderr) => {
+    if (err) {
+      console.error("k6 execution error:", err);
+      return;
+    }
+    if (stderr) {
+      console.error(stderr);
+    }
+    console.log(stdout);
+  });
+
+  res.json({
+    status: "LOAD_TEST_STARTED",
+    params: { vus, iterations, productId, quantity },
+  });
+});
 
 router.post("/worker/order/pause", async (_req, res) => {
   await redis.set("chaos:orderWorkerPaused", "true");
