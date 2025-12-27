@@ -1,0 +1,23 @@
+body {
+  font-family: system-ui, sans-serif;
+  background: #f5f6fa;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+button {
+  margin: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
