@@ -7,6 +7,7 @@ import PaymentFailureRate from "./admin/PaymentFailureRate";
 import DLQPanel from "./admin/DLQPanel";
 import { MetricsPanel } from "./MetricsPanel";
 import { LoadTestPanel } from "./LoadTestPanel";
+import SystemResetPanel from "./admin/SystemResetPanel";
 
 export default function Dashboard() {
   const PRODUCT_ID = "kapil";
@@ -28,6 +29,7 @@ export default function Dashboard() {
         <DLQControls />
         <PaymentFailureRate />
         <LoadTestPanel />
+        <SystemResetPanel />
       </div>
     </div>
   );

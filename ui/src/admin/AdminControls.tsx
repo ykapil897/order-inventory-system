@@ -39,14 +39,14 @@ export default function AdminControls() {
       <h3>System Controls</h3>
 
       <ToggleButton
-        label="Order Worker"
+        label="Order Worker Paused"
         isOn={orderWorkerPaused}
         onToggle={toggleOrderWorker}
         kind="warn"
       />
 
       <ToggleButton
-        label="Payment Worker"
+        label="Payment Worker Paused"
         isOn={paymentWorkerPaused}
         onToggle={togglePaymentWorker}
         kind="warn"

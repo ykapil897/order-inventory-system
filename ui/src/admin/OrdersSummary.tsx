@@ -3,8 +3,8 @@ import { adminGet, adminPost } from "../api";
 
 export default function OrdersSummary() {
   const [summary, setSummary] = useState<any>({});
-  const [inventoryValue, setInventoryValue] = useState(50);
-  const PRODUCT_ID = "kapil";
+  // const [inventoryValue, setInventoryValue] = useState(50);
+  // const PRODUCT_ID = "kapil";
 
   useEffect(() => {
     const id = setInterval(async () => {
@@ -13,20 +13,20 @@ export default function OrdersSummary() {
     return () => clearInterval(id);
   }, []);
 
-  async function resetInventory() {
-    await adminPost("/inventory/reset", {
-      productId: PRODUCT_ID,
-      available: inventoryValue,
-    });
-  }
+  // async function resetInventory() {
+  //   await adminPost("/inventory/reset", {
+  //     productId: PRODUCT_ID,
+  //     available: inventoryValue,
+  //   });
+  // }
 
-  async function clearOrders() {
-    await adminPost("/orders/clear");
-  }
+  // async function clearOrders() {
+  //   await adminPost("/orders/clear");
+  // }
 
-  async function clearIdempotency() {
-    await adminPost("/idempotency/clear");
-  }
+  // async function clearIdempotency() {
+  //   await adminPost("/idempotency/clear");
+  // }
 
   const completed =
     (summary.PAID || 0) + (summary.PAYMENT_FAILED || 0);
@@ -38,7 +38,7 @@ export default function OrdersSummary() {
       <pre>{JSON.stringify(summary, null, 2)}</pre>
       <strong>Completed: {completed}</strong>
 
-      <hr />
+      {/* <hr />
 
       <h4>Admin Reset Controls</h4>
 
@@ -60,7 +60,7 @@ export default function OrdersSummary() {
 
       <button onClick={clearIdempotency}>
         Clear Idempotency Keys
-      </button>
+      </button> */}
     </div>
   );
 }
