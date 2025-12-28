@@ -1,32 +1,49 @@
 import { useState } from "react";
 import { adminPost } from "../api";
+import { ToggleButton } from "../components/ToggleButton";
 
 export default function DLQControls() {
-  const [loading, setLoading] = useState(false);
+  const [forceOrderDLQ, setForceOrderDLQ] = useState(false);
+  const [forcePaymentDLQ, setForcePaymentDLQ] = useState(false);
 
-  async function toggle(path: string) {
-    setLoading(true);
-    await adminPost(path);
-    setLoading(false);
+
+  async function toggleOrderDLQ() {
+    if (forceOrderDLQ) {
+      await adminPost("/dlq/force/order/off");
+    } else {
+      await adminPost("/dlq/force/order/on");
+    }
+    setForceOrderDLQ(!forceOrderDLQ);
   }
+
+  async function togglePaymentDLQ() {
+    if (forcePaymentDLQ) {
+      await adminPost("/dlq/force/payment/off");
+    } else {
+      await adminPost("/dlq/force/payment/on");
+    }
+    setForcePaymentDLQ(!forcePaymentDLQ);
+  }
+
 
   return (
     <div className="card">
       <h3>Force DLQ (Demo)</h3>
 
-      <button disabled={loading} onClick={() => toggle("/dlq/force/order/on")}>
-        Force Order DLQ ON
-      </button>
-      <button disabled={loading} onClick={() => toggle("/dlq/force/order/off")}>
-        Force Order DLQ OFF
-      </button>
+      <ToggleButton
+        label="Force Order DLQ"
+        isOn={forceOrderDLQ}
+        onToggle={toggleOrderDLQ}
+        kind="danger"
+      />
 
-      <button disabled={loading} onClick={() => toggle("/dlq/force/payment/on")}>
-        Force Payment DLQ ON
-      </button>
-      <button disabled={loading} onClick={() => toggle("/dlq/force/payment/off")}>
-        Force Payment DLQ OFF
-      </button>
+      <ToggleButton
+        label="Force Payment DLQ"
+        isOn={forcePaymentDLQ}
+        onToggle={togglePaymentDLQ}
+        kind="danger"
+      />
+
     </div>
   );
 }
