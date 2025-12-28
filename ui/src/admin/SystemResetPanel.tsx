@@ -4,15 +4,24 @@ import { adminPost } from "../api";
 export default function SystemResetPanel() {
   const [available, setAvailable] = useState(50);
   const [loading, setLoading] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
   const PRODUCT_ID = "kapil";
 
+  const canReset = confirmText === "RESET" && !loading;
+
   async function resetSystem() {
+    if (!canReset) return;
+
     setLoading(true);
-    await adminPost("/system/reset", {
-      productId: PRODUCT_ID,
-      available,
-    });
-    setLoading(false);
+    try {
+      await adminPost("/system/reset", {
+        productId: PRODUCT_ID,
+        available,
+      });
+      setConfirmText("");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -34,14 +43,26 @@ export default function SystemResetPanel() {
         />
       </label>
 
+      <label style={{ marginTop: 10, display: "block" }}>
+        Type <strong>RESET</strong> to confirm:
+        <input
+          type="text"
+          value={confirmText}
+          onChange={(e) => setConfirmText(e.target.value)}
+          placeholder="RESET"
+          style={{ width: "100%", marginTop: 6 }}
+        />
+      </label>
+
       <button
         onClick={resetSystem}
-        disabled={loading}
+        disabled={!canReset}
         style={{
           marginTop: 12,
-          background: "#dc2626",
+          background: canReset ? "#dc2626" : "#fca5a5",
           color: "white",
           width: "100%",
+          cursor: canReset ? "pointer" : "not-allowed",
         }}
       >
         {loading ? "Resetting..." : "Reset System"}

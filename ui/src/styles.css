@@ -20,6 +20,15 @@ body {
   margin: 0 0 8px 0;
 }
 
+.card.danger {
+  border: 2px solid #dc2626;
+  background: #fff5f5;
+}
+
+.card.danger h3 {
+  color: #991b1b;
+}
+
 button {
   margin: 4px;
   padding: 8px 12px;
