@@ -167,4 +167,42 @@ router.get("/orders/summary", async (_req, res) => {
   res.json(summary);
 });
 
+router.post("/inventory/reset", async (req, res) => {
+  const { productId, available } = req.body;
+
+  if (!productId || typeof available !== "number" || available < 0) {
+    return res.status(400).json({ error: "INVALID_INPUT" });
+  }
+
+  await prisma.inventory.update({
+    where: { productId },
+    data: {
+      availableStock: available,
+      reservedStock: 0,
+    },
+  });
+
+  // clear cache
+  await redis.del(`inventory:${productId}`);
+
+  res.json({
+    status: "inventory reset",
+    productId,
+    available,
+  });
+});
+
+router.post("/orders/clear", async (_req, res) => {
+  await prisma.orderItem.deleteMany({});
+  await prisma.order.deleteMany({});
+
+  res.json({ status: "all orders cleared" });
+});
+
+router.post("/idempotency/clear", async (_req, res) => {
+  await prisma.idempotencyKey.deleteMany({});
+  res.json({ status: "idempotency keys cleared" });
+});
+
+
 export default router;
