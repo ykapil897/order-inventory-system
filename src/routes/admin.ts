@@ -49,7 +49,7 @@ router.post("/load-test", (req, res) => {
 
   // ⚠️ FIXED SCRIPT — ONLY PARAMS CHANGE
   const cmd = `
-    k6 run load-test.js \
+    k6 run src/routes/load-test.js \
       --env VUS=${vus} \
       --env ITERATIONS=${iterations} \
       --env PRODUCT_ID=${productId} \
