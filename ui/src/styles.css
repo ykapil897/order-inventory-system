@@ -10,14 +10,93 @@ body {
 }
 
 .card {
-  background: white;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+
+.card h3, .card h4 {
+  margin: 0 0 8px 0;
 }
 
 button {
   margin: 4px;
   padding: 8px 12px;
   cursor: pointer;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 20px;
+  align-self: start;
+}
+
+/* ---- Toggle base ---- */
+.toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.toggle .label {
+  font-size: 14px;
+}
+
+.toggle .state {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* ---- OFF state ---- */
+.toggle.off {
+  background: #f3f4f6;   /* light gray */
+  color: #374151;
+}
+
+/* ---- ON state (base) ---- */
+.toggle.on {
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+
+/* ---- Semantic kinds ---- */
+.toggle.on.info { background: #2563eb; }   /* blue */
+.toggle.on.warn { background: #f59e0b; }   /* amber */
+.toggle.on.danger { background: #dc2626; } /* red */
+
+.toggle.off.info { border-color: #c7d2fe; }
+.toggle.off.warn { border-color: #fde68a; }
+.toggle.off.danger { border-color: #fecaca; }
+
+/* ---- Hover & active ---- */
+.toggle:hover {
+  transform: scale(1.03);
+}
+
+.toggle:active {
+  transform: scale(0.98);
 }
