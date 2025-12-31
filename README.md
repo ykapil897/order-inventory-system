@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Order–Inventory System</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+      margin: 40px;
+      color: #222;
+    }
+    h1, h2, h3 {
+      color: #1a1a1a;
+    }
+    code, pre {
+      background: #f6f8fa;
+      padding: 8px;
+      border-radius: 4px;
+      display: block;
+      overflow-x: auto;
+    }
+    ul {
+      margin-left: 20px;
+    }
+    .box {
+      border: 1px solid #ddd;
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .ok {
+      color: green;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📦 Distributed Order & Inventory System</h1>
+
+<p>
+A <strong>production-grade backend system</strong> that demonstrates:
+</p>
+
+<ul>
+  <li>Strong consistency for inventory</li>
+  <li>Idempotent order creation</li>
+  <li>Asynchronous processing with workers</li>
+  <li>Failure handling (retries, DLQ, chaos testing)</li>
+  <li>Observability (logs, metrics)</li>
+  <li>Load testing with k6</li>
+  <li>UI for visualization and demos</li>
+</ul>
+
+<hr />
+
+<h2>🧠 System Design (High Level)</h2>
+
+<pre>
+Client / UI
+    |
+    |  POST /orders
+    v
+API (Express)
+    |
+    |  Prisma Transaction
+    |  - SELECT ... FOR UPDATE
+    |  - Reserve Inventory
+    |  - Create Order (PENDING)
+    |
+    v
+PostgreSQL  <---- Redis (cache, chaos flags)
+    |
+    v
+RabbitMQ (order_created)
+    |
+    v
+Order Worker
+    |
+    |  PENDING -> CONFIRMED
+    v
+RabbitMQ (order_confirmed)
+    |
+    v
+Payment Worker
+    |
+    |  CONFIRMED -> PAID / PAYMENT_FAILED
+    |  (release inventory on failure)
+    v
+PostgreSQL
+</pre>
+
+<p>
+<strong>Key rule:</strong>  
+Database protects correctness.  
+Workers provide reliability.  
+Redis improves performance and control.  
+UI provides visibility.
+</p>
+
+<hr />
+
+<h2>🧱 Architecture Properties</h2>
+
+<ul>
+  <li class="ok">✔ No overselling (row-level locking)</li>
+  <li class="ok">✔ Idempotent API</li>
+  <li class="ok">✔ Async, retry-safe workers</li>
+  <li class="ok">✔ DLQ for poison messages</li>
+  <li class="ok">✔ Chaos engineering support</li>
+  <li class="ok">✔ Load testing & metrics</li>
+</ul>
+
+<hr />
+
+<h2>📁 Repository Structure (Simplified)</h2>
+
+<pre>
+order-inventory-system/
+├── docker-compose.yml
+├── Dockerfile
+├── prisma/
+│   └── schema.prisma
+├── src/              (Backend)
+│   ├── server.ts
+│   ├── worker.ts
+│   ├── paymentWorker.ts
+│   ├── expiryWorker.ts
+│   ├── routes/
+│   │   ├── orders.ts
+│   │   ├── inventory.ts
+│   │   └── admin.ts
+│   └── ...
+└── ui/               (Frontend)
+    ├── src/
+    │   ├── InventoryPanel.tsx
+    │   ├── OrderPanel.tsx
+    │   ├── LoadTestPanel.tsx
+    │   └── MetricsPanel.tsx
+</pre>
+
+<hr />
+
+<h2>🚀 How to Run (Docker)</h2>
+
+<h3>1️⃣ Start Backend + Infra</h3>
+
+<pre>
+docker compose up --build
+</pre>
+
+Services started:
+<ul>
+  <li>PostgreSQL</li>
+  <li>Redis</li>
+  <li>RabbitMQ</li>
+  <li>API</li>
+  <li>Order Worker</li>
+  <li>Payment Worker</li>
+  <li>Expiry Worker</li>
+</ul>
+
+<h3>2️⃣ Start UI</h3>
+
+<pre>
+cd ui
+npm install
+npm run dev
+</pre>
+
+Open:
+<pre>http://localhost:5173</pre>
+
+<hr />
+
+<h2>📡 Core API Endpoints</h2>
+
+<h3>Orders</h3>
+
+<pre>
+POST /orders
+Headers:
+  Idempotency-Key: any-unique-key
+
+Body:
+{
+  "userId": "user-1",
+  "items": [
+    { "productId": "kapil", "quantity": 1 }
+  ]
+}
+</pre>
+
+<h3>Inventory</h3>
+
+<pre>
+GET /inventory/:productId
+</pre>
+
+<h3>Order Status</h3>
+
+<pre>
+GET /orders/:orderId
+</pre>
+
+<hr />
+
+<h2>🧪 Admin / Demo Endpoints</h2>
+
+<h3>Load Test</h3>
+
+<pre>
+POST /admin/load-test
+{
+  "vus": 20,
+  "iterations": 50,
+  "productId": "kapil",
+  "quantity": 1
+}
+</pre>
+
+<h3>Worker Control (Chaos)</h3>
+
+<pre>
+POST /admin/worker/order/pause
+POST /admin/worker/order/resume
+
+POST /admin/worker/payment/pause
+POST /admin/worker/payment/resume
+</pre>
+
+<h3>Payment Failure Rate</h3>
+
+<pre>
+POST /admin/payment/failure-rate
+{
+  "rate": 0.7
+}
+</pre>
+
+<h3>API Read-Only Mode</h3>
+
+<pre>
+POST /admin/api/read-only/on
+POST /admin/api/read-only/off
+</pre>
+
+<hr />
+
+<h2>📊 Metrics & Observability</h2>
+
+<h3>Metrics</h3>
+
+<pre>
+GET /metrics
+</pre>
+
+<p>
+Exposes Prometheus-compatible metrics:
+</p>
+
+<ul>
+  <li>HTTP latency histograms</li>
+  <li>Request counts by route/status</li>
+  <li>Node.js CPU / memory / event loop</li>
+</ul>
+
+<p>
+<strong>Important:</strong> Metrics show <em>system health</em>, not business outcomes.
+</p>
+
+<h3>Logs</h3>
+
+<pre>
+docker compose logs -f api
+docker compose logs -f worker
+docker compose logs -f payment-worker
+</pre>
+
+<hr />
+
+<h2>✅ What Success Looks Like</h2>
+
+After load testing, verify:
+
+<ul>
+  <li>Orders move through: PENDING → CONFIRMED → PAID / PAYMENT_FAILED</li>
+  <li>No orders stuck indefinitely</li>
+  <li>Inventory invariant holds:
+    <pre>availableStock + reservedStock = initialStock</pre>
+  </li>
+  <li>No API crashes (no HTTP 500s)</li>
+  <li>DLQ size is visible and explainable</li>
+</ul>
+
+<hr />
+
+<h2>🎯 What This Project Demonstrates</h2>
+
+<ul>
+  <li>Correct handling of concurrency</li>
+  <li>Async reliability patterns</li>
+  <li>Graceful degradation under failure</li>
+  <li>Operational visibility</li>
+  <li>Production-ready thinking</li>
+</ul>
+
+<p class="ok">
+This is not a toy CRUD app — it is a real distributed system.
+</p>
+
+<hr />
+
+<h2>📌 Notes</h2>
+
+<ul>
+  <li>Authentication intentionally omitted (focus on system design)</li>
+  <li>Outbox pattern discussed but not implemented (documented trade-off)</li>
+  <li>Chaos endpoints are demo-only</li>
+</ul>
+
+<hr />
+
+<p><strong>Author:</strong> Kapil</p>
+
+</body>
+</html>
