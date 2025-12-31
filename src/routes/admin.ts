@@ -4,6 +4,8 @@ import { exec } from "child_process";
 import { prisma } from "../prisma";
 import amqp from "amqplib";
 import {
+  QUEUE_ORDER_CREATED,
+  QUEUE_ORDER_CONFIRMED,
   QUEUE_ORDER_DLQ,
   QUEUE_PAYMENT_DLQ,
 } from "../queue";
@@ -230,12 +232,37 @@ router.post("/system/reset", async (req, res) => {
   // 4️⃣ Clear cache
   await redis.del(`inventory:${productId}`);
 
+  // 5️⃣ Purge all queues
+  await purgeQueues();
+
   res.json({
     status: "SYSTEM_RESET_DONE",
     productId,
     available,
   });
 });
+
+async function purgeQueues() {
+  const conn = await amqp.connect(
+    process.env.RABBITMQ_URL || "amqp://localhost"
+  );
+  const ch = await conn.createChannel();
+
+  const queues = [
+    QUEUE_ORDER_CREATED,
+    QUEUE_ORDER_CONFIRMED,
+    QUEUE_ORDER_DLQ,
+    QUEUE_PAYMENT_DLQ,
+  ];
+
+  for (const q of queues) {
+    await ch.assertQueue(q, { durable: true });
+    await ch.purgeQueue(q);
+  }
+
+  await ch.close();
+  await conn.close();
+}
 
 
 export default router;
