@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -35,7 +35,7 @@
       font-weight: bold;
     }
   </style>
-</head>
+</head> -->
 <body>
 
 <h1>📦 Distributed Order & Inventory System</h1>
